@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Block Maker</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial Black', Gadget, sans-serif;
+            background: #87CEEB;
+            overflow: hidden;
+            color: white;
+        }
+
+        .screen {
+            width: 100vw;
+            height: 100vh;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to bottom, #87CEEB, #98FB98);
+            text-align: center;
+            position: relative;
+        }
+
+        #titleScreen h1 {
+            font-size: 5rem;
+            text-shadow: 4px 4px 0px #333;
+            margin-bottom: 40px;
+        }
+
+        .menu-btn {
+            background: #ff6b6b;
+            color: white;
+            border: 4px solid white;
+            box-shadow: 0 6px 0 #c0392b;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 2rem;
+            font-family: inherit;
+            margin: 10px;
+            transition: all 0.1s ease;
+        }
+
+        .menu-btn:hover {
+            background: #ff8b8b;
+        }
+        
+        .menu-btn:active {
+            box-shadow: 0 2px 0 #c0392b;
+            transform: translateY(4px);
+        }
+        
+        #levelSelectScreen h2, #settingsScreen h2 {
+            font-size: 3rem;
+            text-shadow: 3px 3px 0px #333;
+            margin-bottom: 30px;
+        }
+
+        .copyright {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+            font-family: Arial, sans-serif;
+        }
+        
+        .settings-option {
+            font-size: 1.5rem;
+            margin: 20px;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            flex-direction: column;
+        }
+        
+        #toolbar {
+            background: #333;
+            color: white;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            flex-wrap: wrap;
+            min-height: 40px; /* Ensures toolbar has height */
+        }
+        
+        .tool-btn {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .tool-btn:hover {
+            background: #667;
+        }
+        
+        .tool-btn.active {
+            background: #007bff;
+        }
+        
+        #gameCanvas {
+            flex: 1;
+            display: block;
+            cursor: crosshair;
+        }
+        
+        #tileSelector {
+            position: absolute;
+            top: 85px; /* Moved down to avoid toolbar overlap */
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+            max-width: 400px;
+            z-index: 10;
+        }
+        
+        .tile-option {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            margin: 4px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            position: relative;
+            vertical-align: top;
+        }
+        
+        .tile-option.selected {
+            border-color: #007bff;
+        }
+        
+        .tile-label {
+            font-size: 10px;
+            text-align: center;
+            margin-top: 2px;
+            white-space: nowrap;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+        
+        #mobileControls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            z-index: 20;
+            user-select: none;
+        }
+        
+        .mobile-controls-visible #mobileControls {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .d-pad {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin-left: 30px;
+        }
+        
+        .d-pad-btn {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid rgba(255,255,255,0.5);
+            color: white;
+            font-size: 24px;
+        }
+        .d-pad-btn:active {
+             background: rgba(0,0,0,0.6);
+        }
+
+        #d-pad-up { top: 0; left: 50px; border-radius: 10px 10px 0 0; }
+        #d-pad-down { bottom: 0; left: 50px; border-radius: 0 0 10px 10px; }
+        #d-pad-left { top: 50px; left: 0; border-radius: 10px 0 0 10px; }
+        #d-pad-right { top: 50px; right: 0; border-radius: 0 10px 10px 0; }
+        
+        #jump-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 107, 107, 0.7);
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            margin-right: 40px;
+            display: none; /* Hidden by default, shown in play mode */
+        }
+        #jump-btn:active {
+            background: rgba(255, 107, 107, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <div id="titleScreen" class="screen" style="display: flex;">
+        <h1>Block Maker</h1>
+        <div>
+            <button id="makeLevelBtn" class="menu-btn">Make a Level</button>
+            <button id="playLevelBtn" class="menu-btn">Play a Level</button>
+            <button id="settingsBtn" class="menu-btn" style="font-size: 1.5rem; background: #6c757d; box-shadow: 0 6px 0 #495057;">Settings</button>
+        </div>
+        <div class="copyright">Block Maker is a free and open-source project. Developed in 2025.</div>
+    </div>
+    
+    <div id="levelSelectScreen" class="screen">
+        <h2>Play a Level</h2>
+        <div>
+            <button id="uploadBtn" class="menu-btn" style="font-size: 1.5rem;">Upload and Play Level</button>
+        </div>
+        <div>
+            <button id="mainMenuFromSelectBtn" class="menu-btn" style="font-size: 1rem; background: #555; box-shadow: 0 6px 0 #222;">Main Menu</button>
+        </div>
+    </div>
+    
+    <div id="settingsScreen" class="screen">
+        <h2>Settings</h2>
+        <div class="settings-option">
+            <label for="mobileToggle">Mobile Mode: </label>
+            <input type="checkbox" id="mobileToggle" />
+        </div>
+        <div>
+            <button id="backToMainBtn" class="menu-btn" style="font-size: 1rem; background: #555; box-shadow: 0 6px 0 #222;">Back</button>
+        </div>
+    </div>
+
+    <div id="gameContainer">
+        <div id="toolbar">
+            <button class="tool-btn" id="mainMenuBtn">Main Menu</button>
+            <button class="tool-btn active" id="editBtn">Edit Mode</button>
+            <button class="tool-btn" id="playBtn">Play Mode</button>
+            <button class="tool-btn" id="drawBtn">Draw Tool</button>
+            <button class="tool-btn" id="eraseBtn">Erase Tool</button>
+            <button class="tool-btn" id="clearBtn">Clear Level</button>
+            <button class="tool-btn" id="saveBtn">Save Level</button>
+            <button class="tool-btn" id="loadBtn">Load Level</button>
+            <span id="modeIndicator">Mode: Edit | Tool: Draw</span>
+        </div>
+        
+        <div id="tileSelector">
+            <div>Select Tile:</div>
+            <div id="tileOptions"></div>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="controls" class="controls">
+            <div>Use ARROW KEYS or WASD to move</div>
+            <div>SPACE to jump</div>
+        </div>
+    </div>
+    
+    <div id="mobileControls">
+        <div class="d-pad">
+            <button id="d-pad-up" class="d-pad-btn">▲</button>
+            <button id="d-pad-left" class="d-pad-btn">◀</button>
+            <button id="d-pad-right" class="d-pad-btn">▶</button>
+            <button id="d-pad-down" class="d-pad-btn">▼</button>
+        </div>
+        <button id="jump-btn"></button>
+    </div>
+
+    <script>
+        const qs = (sel) => document.querySelector(sel);
+        
+        // --- DOM ELEMENTS ---
+        const titleScreen = qs('#titleScreen'), levelSelectScreen = qs('#levelSelectScreen'), settingsScreen = qs('#settingsScreen');
+        const gameContainer = qs('#gameContainer'), canvas = qs('#gameCanvas'), ctx = canvas.getContext('2d');
+        const toolbar = qs('#toolbar'), tileSelector = qs('#tileSelector'), tileOptions = qs('#tileOptions');
+        const controls = qs('#controls'), modeIndicator = qs('#modeIndicator'), mobileControls = qs('#mobileControls');
+
+        // --- GAME STATE ---
+        let currentScreen = 'title', mode = 'edit', tool = 'draw', selectedTile = 'ground';
+        let level = {}, enemies = [], coins = [], score = 0;
+        let startPosition = { x: 100, y: 3000 }, deathZoneY = 4000;
+        let player = { x: 100, y: 200, width: 32, height: 32, vx: 0, vy: 0, onGround: false, color: '#ff6b6b' };
+        let mobileModeActive = false;
+        
+        // --- FPS & KEYS ---
+        let frameCount = 0, fps = 0, lastFpsUpdate = 0;
+        const keys = {};
+
+        // --- TILE DEFINITIONS ---
+        const tiles = {
+            ground: { color: '#8B4513', solid: true }, brick: { color: '#CD853F', solid: true },
+            pipe: { color: '#228B22', solid: true }, coin: { color: '#FFD700', solid: false },
+            enemy: { color: '#8B0000', solid: false }, flag: { color: '#FF1493', solid: false },
+            lava: { color: '#FF4500', solid: false }, cloud: { color: '#F0F8FF', solid: false }
+        };
+        const TILE_SIZE = 32;
+        let camera = { x: 0, y: 0 };
+
+        // --- SCREEN MANAGEMENT ---
+        function showScreen(screenName) {
+            currentScreen = screenName;
+            titleScreen.style.display = 'none'; levelSelectScreen.style.display = 'none';
+            settingsScreen.style.display = 'none'; gameContainer.style.display = 'none';
+            if (screenName === 'title') titleScreen.style.display = 'flex';
+            if (screenName === 'levelSelect') levelSelectScreen.style.display = 'flex';
+            if (screenName === 'settings') settingsScreen.style.display = 'flex';
+            if (screenName === 'editor' || screenName === 'game') {
+                gameContainer.style.display = 'flex'; resizeCanvas();
+            }
+        }
+
+        // --- INITIALIZATION ---
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight - toolbar.offsetHeight; }
+        window.addEventListener('resize', resizeCanvas);
+        
+        function createTileSelector() {
+            tileOptions.innerHTML = '';
+            const tileNames = { ground: 'Ground', brick: 'Brick', grass: 'Grass', coin: 'Coin', enemy: 'Enemy', flag: 'Flag', lava: 'Lava', cloud: 'Cloud' };
+            Object.keys(tiles).forEach(tileType => {
+                const container = document.createElement('div'); container.style.cssText = 'display: inline-block; text-align: center; margin: 4px;';
+                const option = document.createElement('div');
+                option.className = 'tile-option'; option.style.backgroundColor = tiles[tileType].color; option.title = tileNames[tileType]; option.onclick = () => selectTile(tileType);
+                if (tileType === 'coin') option.innerHTML = '●'; else if (tileType === 'enemy') option.innerHTML = '👾'; else if (tileType === 'flag') option.innerHTML = '🏁';
+                if (['coin', 'enemy', 'flag'].includes(tileType)) { option.style.cssText = 'color: white; font-size: 20px; line-height: 36px; text-align: center;'; }
+                const label = document.createElement('div'); label.className = 'tile-label'; label.textContent = tileNames[tileType];
+                container.appendChild(option); container.appendChild(label); tileOptions.appendChild(container);
+            });
+            selectTile('ground');
+        }
+        
+        function selectTile(tileType) {
+            selectedTile = tileType;
+            document.querySelectorAll('.tile-option').forEach(opt => opt.classList.remove('selected'));
+            const tileIndex = Object.keys(tiles).indexOf(tileType);
+            if(document.querySelectorAll('.tile-option')[tileIndex]) {
+                document.querySelectorAll('.tile-option')[tileIndex].classList.add('selected');
+            }
+        }
+        
+        // --- MODE & UI SWITCHING ---
+        function setTool(newTool) {
+            tool = newTool; updateModeIndicator();
+            qs('#drawBtn').classList.toggle('active', tool === 'draw');
+            qs('#eraseBtn').classList.toggle('active', tool === 'erase');
+            canvas.style.cursor = tool === 'draw' ? 'crosshair' : 'not-allowed';
+        }
+        
+        function updateModeIndicator() {
+            const toolText = tool.charAt(0).toUpperCase() + tool.slice(1);
+            modeIndicator.textContent = `Mode: ${mode.charAt(0).toUpperCase() + mode.slice(1)} | Tool: ${toolText}`;
+        }
+        
+        function setMode(newMode, fromEditor = false) {
+            mode = newMode; updateModeIndicator();
+            const allToolbarElements = toolbar.querySelectorAll('.tool-btn, #modeIndicator');
+            allToolbarElements.forEach(el => el.style.display = 'none');
+            qs('#jump-btn').style.display = 'none';
+
+            if (mode === 'edit') {
+                ['mainMenuBtn', 'editBtn', 'playBtn', 'drawBtn', 'eraseBtn', 'clearBtn', 'saveBtn', 'loadBtn', 'modeIndicator'].forEach(id => qs(`#${id}`).style.display = 'inline-block');
+                qs('#playBtn').classList.remove('active'); qs('#editBtn').classList.add('active');
+                tileSelector.style.display = 'block'; controls.style.display = 'none';
+                canvas.style.cursor = tool === 'draw' ? 'crosshair' : 'not-allowed';
+            } else { // Play mode
+                if (fromEditor) { qs('#editBtn').style.display = 'inline-block'; } 
+                else { qs('#mainMenuBtn').style.display = 'inline-block'; }
+                qs('#editBtn').classList.remove('active'); qs('#playBtn').classList.add('active');
+                qs('#jump-btn').style.display = 'block';
+                tileSelector.style.display = 'none'; controls.style.display = mobileModeActive ? 'none' : 'block';
+                canvas.style.cursor = 'default';
+                resetPlayer();
+            }
+        }
+        
+        // --- ENTITY & LEVEL MANAGEMENT ---
+        function resetPlayer() {
+            player.x = startPosition.x; player.y = startPosition.y;
+            player.vx = 0; player.vy = 0; player.onGround = false;
+            camera.x = player.x - canvas.width / 2; camera.y = player.y - canvas.height / 2;
+            score = 0; initializeEntities();
+        }
+        
+        function initializeEntities() {
+            enemies = []; coins = []; let lowestTileY = -Infinity;
+            Object.keys(level).forEach(key => {
+                const [x, y] = key.split(',').map(Number); const tileType = level[key];
+                if (tiles[tileType] && tiles[tileType].solid) lowestTileY = Math.max(lowestTileY, y);
+                if (tileType === 'enemy') enemies.push({ x: x*TILE_SIZE, y: y*TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE, vx: 1, direction: 1, alive: true });
+                else if (tileType === 'coin') coins.push({ x: x*TILE_SIZE, y: y*TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE, collected: false, bounce: 0 });
+            });
+            deathZoneY = (lowestTileY > -Infinity) ? (lowestTileY*TILE_SIZE) + canvas.height : startPosition.y + canvas.height;
+        }
+        
+        function loadLevelData(levelData, isFromEditor) {
+            try {
+                const gameData = JSON.parse(levelData);
+                level = gameData.level || {}; startPosition = gameData.startPosition || { x: 100, y: 3000 };
+                if (isFromEditor) { setMode('edit'); camera.y = startPosition.y-canvas.height/2; alert('Level loaded into editor!'); } 
+                else { showScreen('game'); setMode('play', false); }
+            } catch (err) { alert('Invalid level file. Please upload a valid Block Maker .JSON file.'); }
+        }
+
+        // --- CORE LOGIC (COLLISION, UPDATES, RENDER) ---
+        const getTileCoords = (mX, mY) => ({ x: Math.floor((mX + camera.x)/TILE_SIZE), y: Math.floor((mY + camera.y)/TILE_SIZE) });
+        const placeTile = (x, y, tileType) => { const key = `${x},${y}`; if (tileType) level[key] = tileType; else delete level[key]; };
+        const getTile = (x, y) => level[`${x},${y}`] || null;
+        function checkCollision(x, y, width, height) {
+            const l=Math.floor(x/TILE_SIZE), r=Math.floor((x+width-1)/TILE_SIZE), t=Math.floor(y/TILE_SIZE), b=Math.floor((y+height-1)/TILE_SIZE);
+            for (let tx=l; tx<=r; tx++) for (let ty=t; ty<=b; ty++) { const tile=getTile(tx,ty); if(tile&&tiles[tile]&&tiles[tile].solid) return true; }
+            return false;
+        }
+        function updateCameraForEditMode() {
+            if (mode!=='edit') return; const speed=20;
+            if (keys.ArrowLeft||keys.KeyA) camera.x-=speed; if(keys.ArrowRight||keys.KeyD) camera.x+=speed;
+            if (keys.ArrowUp||keys.KeyW) camera.y-=speed; if(keys.ArrowDown||keys.KeyS) camera.y+=speed;
+            camera.x = Math.max(0, camera.x); camera.y = Math.max(0, camera.y);
+        }
+        function updatePlayer() {
+            if (mode!=='play') return; if(player.y>deathZoneY){resetPlayer();return;} player.vy+=0.8;
+            if(keys.ArrowLeft||keys.KeyA)player.vx=-5; else if(keys.ArrowRight||keys.KeyD)player.vx=5; else player.vx*=0.8;
+            if((keys.ArrowUp||keys.KeyW||keys.Space) && player.onGround){player.vy=-15;player.onGround=false;}
+            const nX=player.x+player.vx; if(!checkCollision(nX,player.y,player.width,player.height))player.x=nX;else player.vx=0;
+            const nY=player.y+player.vy; if(!checkCollision(player.x,nY,player.width,player.height)){player.y=nY;player.onGround=false;}
+            else{if(player.vy>0)player.onGround=true;player.vy=0;}
+            checkLavaCollision();checkCoinCollection();checkEnemyCollision();checkFlagCollision();
+            camera.x=player.x-canvas.width/2; camera.y=player.y-canvas.height/2;
+            camera.x=Math.max(0,camera.x); camera.y=Math.max(0,camera.y);
+        }
+        function checkLavaCollision(){const p={x:player.x,y:player.y,w:player.width,h:player.height};for(const k of Object.keys(level)){if(level[k]==='lava'){const[x,y]=k.split(',').map(Number);const t={x:x*TILE_SIZE,y:y*TILE_SIZE,w:TILE_SIZE,h:TILE_SIZE};if(p.x<t.x+t.w&&p.x+p.w>t.x&&p.y<t.y+t.h&&p.y+p.h>t.y){resetPlayer();return;}}}}
+        function checkFlagCollision(){const p={x:player.x,y:player.y,w:player.width,h:player.height};for(const k of Object.keys(level)){if(level[k]==='flag'){const[x,y]=k.split(',').map(Number);const t={x:x*TILE_SIZE,y:y*TILE_SIZE,w:TILE_SIZE,h:TILE_SIZE};if(p.x<t.x+t.w&&p.x+p.w>t.x&&p.y<t.y+t.h&&p.y+p.h>t.y){alert(`Level Complete!\nYour Score: ${score}`);if(currentScreen==='game')showScreen('levelSelect');else setMode('edit',true);return;}}}}
+        function checkCoinCollection(){const p={x:player.x,y:player.y,w:player.width,h:player.height};coins.forEach(c=>{if(!c.collected){const cr={x:c.x,y:c.y,w:TILE_SIZE,h:TILE_SIZE};if(p.x<cr.x+cr.w&&p.x+p.w>cr.x&&p.y<cr.y+cr.h&&p.y+p.h>cr.y){c.collected=true;score+=100;}}});}
+        function checkEnemyCollision(){const p={x:player.x,y:player.y,w:player.width,h:player.height};enemies.forEach(e=>{if(e.alive){const er={x:e.x,y:e.y,w:e.width,h:e.height};if(p.x<er.x+er.w&&p.x+p.w>er.x&&p.y<er.y+er.h&&p.y+p.h>er.y){if(player.vy>0&&p.y+p.h<er.y+20){e.alive=false;player.vy=-10;score+=200;}else{resetPlayer();return;}}}});}
+        function updateEnemies(){if(mode!=='play')return;enemies.forEach(e=>{if(e.alive){e.x+=e.vx*e.direction;const fX=e.x+(e.vx*e.direction);if(checkCollision(fX,e.y,e.width,e.height)||!checkCollision(fX,e.y+e.height+1,e.width,1)){e.direction*=-1;}}});}
+        function updateCoins(){if(mode!=='play')return;coins.forEach(c=>{if(!c.collected)c.bounce+=0.2;});}
+        function render(){ctx.clearRect(0,0,canvas.width,canvas.height);if(mode==='edit'){ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=1;for(let x=0;x<canvas.width;x+=TILE_SIZE){ctx.beginPath();ctx.moveTo(x-(camera.x%TILE_SIZE),0);ctx.lineTo(x-(camera.x%TILE_SIZE),canvas.height);ctx.stroke();} for(let y=0;y<canvas.height;y+=TILE_SIZE){ctx.beginPath();ctx.moveTo(0,y-(camera.y%TILE_SIZE));ctx.lineTo(canvas.width,y-(camera.y%TILE_SIZE));ctx.stroke();} const sX=startPosition.x-camera.x,sY=startPosition.y-camera.y;if(sX>-player.width&&sX<canvas.width&&sY>-player.height&&sY<canvas.height){ctx.fillStyle='rgba(255,107,107,0.7)';ctx.strokeStyle='white';ctx.lineWidth=2;ctx.fillRect(sX,sY,player.width,player.height);ctx.strokeRect(sX,sY,player.width,player.height);ctx.fillStyle='white';ctx.font='bold 16px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('S',sX+player.width/2,sY+player.height/2);}} Object.keys(level).forEach(k=>{const[x,y]=k.split(',').map(Number);const type=level[k];if(mode==='play'&&(type==='enemy'||type==='coin'))return;const tile=tiles[type];if(!tile)return;const sX=x*TILE_SIZE-camera.x,sY=y*TILE_SIZE-camera.y;if(sX>-TILE_SIZE&&sX<canvas.width&&sY>-TILE_SIZE&&sY<canvas.height){ctx.fillStyle=tile.color;ctx.fillRect(sX,sY,TILE_SIZE,TILE_SIZE);if(type==='coin'){ctx.fillStyle='white';ctx.font='20px Arial';ctx.textAlign='center';ctx.fillText('●',sX+TILE_SIZE/2,sY+TILE_SIZE/2+6);}else if(type==='enemy'){ctx.fillStyle='white';ctx.font='16px Arial';ctx.textAlign='center';ctx.fillText('👾',sX+TILE_SIZE/2,sY+TILE_SIZE/2+4);}else if(type==='flag'){ctx.fillStyle='white';ctx.font='16px Arial';ctx.textAlign='center';ctx.fillText('🏁',sX+TILE_SIZE/2,sY+TILE_SIZE/2+4);}else if(type==='lava'){ctx.fillStyle='rgba(255,255,0,0.3)';ctx.fillRect(sX,sY,TILE_SIZE,TILE_SIZE/3);}}});if(mode==='play'){coins.forEach(c=>{if(!c.collected){const sX=c.x-camera.x,sY=c.y-camera.y+Math.sin(c.bounce)*3;if(sX>-TILE_SIZE&&sX<canvas.width&&sY>-TILE_SIZE&&sY<canvas.height){ctx.fillStyle=tiles.coin.color;ctx.beginPath();ctx.arc(sX+TILE_SIZE/2,sY+TILE_SIZE/2,TILE_SIZE/3,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(255,255,255,0.8)';ctx.beginPath();ctx.arc(sX+TILE_SIZE/2-4,sY+TILE_SIZE/2-4,2,0,Math.PI*2);ctx.fill();}}});enemies.forEach(e=>{if(e.alive){const sX=e.x-camera.x,sY=e.y-camera.y;if(sX>-TILE_SIZE&&sX<canvas.width&&sY>-TILE_SIZE&&sY<canvas.height){ctx.fillStyle=tiles.enemy.color;ctx.fillRect(sX,sY,e.width,e.height);ctx.fillStyle='white';ctx.fillRect(sX+8,sY+8,4,4);ctx.fillRect(sX+20,sY+8,4,4);ctx.fillStyle='black';ctx.fillRect(sX+12,sY+20,8,4);}}});const sX=player.x-camera.x,sY=player.y-camera.y;ctx.fillStyle=player.color;ctx.fillRect(sX,sY,player.width,player.height);ctx.fillStyle='white';ctx.fillRect(sX+8,sY+8,4,4);ctx.fillRect(sX+20,sY+8,4,4);ctx.fillRect(sX+12,sY+20,8,4);ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(10,10,200,40);ctx.fillStyle='white';ctx.font='16px Arial';ctx.textAlign='left';ctx.fillText(`Score: ${score}`,20,35);} ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(canvas.width-100,10,90,25);ctx.fillStyle='white';ctx.font='16px Arial';ctx.textAlign='right';ctx.fillText(`FPS: ${Math.round(fps)}`,canvas.width-15,28);}
+        
+        // --- EVENT LISTENERS ---
+        document.addEventListener('keydown', e => keys[e.code] = true);
+        document.addEventListener('keyup', e => keys[e.code] = false);
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+        let isMouseDown=false;canvas.addEventListener('mousedown',e=>{if(mode==='edit'){isMouseDown=true;const r=canvas.getBoundingClientRect(),c=getTileCoords(e.clientX-r.left,e.clientY-r.top);if(e.button===0){if(tool==='draw')placeTile(c.x,c.y,selectedTile);else if(tool==='erase')placeTile(c.x,c.y,null);}else if(e.button===2)placeTile(c.x,c.y,null);}});
+        canvas.addEventListener('mousemove',e=>{if(mode==='edit'&&isMouseDown){const r=canvas.getBoundingClientRect(),c=getTileCoords(e.clientX-r.left,e.clientY-r.top);if(e.buttons===1){if(tool==='draw')placeTile(c.x,c.y,selectedTile);else if(tool==='erase')placeTile(c.x,c.y,null);}else if(e.buttons===2)placeTile(c.x,c.y,null);}});
+        canvas.addEventListener('mouseup',()=>isMouseDown=false);
+        
+        // --- Button Listeners ---
+        qs('#makeLevelBtn').addEventListener('click',()=>{level={};startPosition={x:100,y:3000};camera.x=0;camera.y=startPosition.y-canvas.height/2;showScreen('editor');setMode('edit');});
+        qs('#playLevelBtn').addEventListener('click',()=>showScreen('levelSelect'));
+        qs('#settingsBtn').addEventListener('click',()=>showScreen('settings'));
+        qs('#backToMainBtn').addEventListener('click',()=>showScreen('title'));
+        qs('#mainMenuFromSelectBtn').addEventListener('click',()=>showScreen('title'));
+        qs('#mainMenuBtn').addEventListener('click',()=>showScreen('title'));
+        qs('#editBtn').addEventListener('click',()=>setMode('edit',true));
+        qs('#playBtn').addEventListener('click',()=>setMode('play',true));
+        qs('#drawBtn').addEventListener('click',()=>setTool('draw'));
+        qs('#eraseBtn').addEventListener('click',()=>setTool('erase'));
+        qs('#clearBtn').addEventListener('click',()=>{if(confirm('Clear the entire level?'))level={};});
+        qs('#saveBtn').addEventListener('click',()=>{const d=JSON.stringify({level:level,startPosition:startPosition},null,2),b=new Blob([d],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=`block_maker_level_${Date.now()}.json`;a.click();URL.revokeObjectURL(u);});
+        const fileInputHandler=isFromEditor=>{const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>{const f=e.target.files[0];if(f){const r=new FileReader();r.onload=e=>loadLevelData(e.target.result,isFromEditor);r.readAsText(f);}};i.click();};
+        qs('#loadBtn').addEventListener('click',()=>fileInputHandler(true));
+        qs('#uploadBtn').addEventListener('click',()=>fileInputHandler(false));
+        
+        // Mobile Controls
+        qs('#mobileToggle').addEventListener('change', e => {
+            mobileModeActive = e.target.checked;
+            document.body.classList.toggle('mobile-controls-visible', mobileModeActive);
+            controls.style.display = (mobileModeActive || mode !== 'play') ? 'none' : 'block';
+        });
+        const handleMobileInput = (key, isDown) => keys[key] = isDown;
+        const mobileBtns = {'d-pad-up':'ArrowUp','d-pad-down':'ArrowDown','d-pad-left':'ArrowLeft','d-pad-right':'ArrowRight','jump-btn':'Space'};
+        for(const [id, key] of Object.entries(mobileBtns)) {
+            const btn = qs(`#${id}`);
+            btn.addEventListener('mousedown', () => handleMobileInput(key, true));
+            btn.addEventListener('mouseup', () => handleMobileInput(key, false));
+            btn.addEventListener('touchstart', e => { e.preventDefault(); handleMobileInput(key, true); });
+            btn.addEventListener('touchend', e => { e.preventDefault(); handleMobileInput(key, false); });
+        }
+
+        // --- MASTER GAME LOOP ---
+        function gameLoop(currentTime) {
+            if (currentScreen === 'editor' || currentScreen === 'game') {
+                frameCount++; if(currentTime-lastFpsUpdate>1000){fps=frameCount;frameCount=0;lastFpsUpdate=currentTime;}
+                updatePlayer(); updateCameraForEditMode(); updateEnemies(); updateCoins(); render();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // --- KICKOFF ---
+        createTileSelector();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
