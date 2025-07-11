@@ -343,7 +343,7 @@
         
         function createTileSelector() {
             tileOptions.innerHTML = '';
-            const tileNames = { ground: 'Ground', brick: 'Brick', grass: 'Grass', coin: 'Coin', enemy: 'Enemy', flag: 'Flag', lava: 'Lava', cloud: 'Cloud' };
+            const tileNames = { ground: 'Ground', brick: 'Brick', pipe: 'Grass', coin: 'Coin', enemy: 'Enemy', flag: 'Flag', lava: 'Lava', cloud: 'Cloud' };
             Object.keys(tiles).forEach(tileType => {
                 const container = document.createElement('div'); container.style.cssText = 'display: inline-block; text-align: center; margin: 4px;';
                 const option = document.createElement('div');
